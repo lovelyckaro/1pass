@@ -228,7 +228,7 @@ fetch_index()
         echo "fetching index of all items"
     fi
     local items
-    items=$(op list items --session="${token}" || echo -n "_fail_")
+    items=$(op list items --vault=private --session="${token}" || echo -n "_fail_")
     if [ "$items" == "_fail_" ]; then
         echo "1pass: failed to fetch index of all items"
         exit 1
@@ -344,6 +344,40 @@ get_totp()
         output_result
     fi
 }
+#
+# Pretty print fields and metadata about item
+#
+get_info() {
+  # Make sure we have a current and valid session and then get the UUID
+  init_session
+  if [ ! -r "$index" ] || [ $refresh -eq 1 ]; then
+      fetch_index
+  fi
+  local item
+  item=$(gpg -qd "$index" | jq --compact-output ".[] | select(.overview.title==\"${1}\")") 
+  
+  # Fetch data
+  if [ $verbose -eq 1 ]; then
+    echo "Reading fields and metadata"
+    echo "item is:"
+    jq <<< $item
+  fi
+  local title
+  local username
+  local createddate 
+  local updateddate
+  local url
+  title=${1}
+  username=$(jq -r ".overview.ainfo" <<< "$item")
+  createddate=$(jq -r ".createdAt" <<< "$item")
+  updateddate=$(jq -r ".updatedAt" <<< "$item")
+  url=$(jq -r ".overview.url" <<< "$item")
+  echo -e "\e[34mTitle: \e[32m$title"
+  echo -e "\e[34mUsername: \e[32m$username"
+  echo -e "\e[34mURL: \e[32m$url"
+  echo -e "\e[34mCreated \e[32m$createddate"
+  echo -e "\e[34mLast updated \e[32m$updateddate\e[0m"
+}
 
 output_result()
 {
@@ -422,6 +456,7 @@ elif [ $# -eq 1 ]; then
 elif [ $# -eq 2 ]; then
     case "$2" in
         totp ) get_totp "$1"          ;;
+        info ) get_info "$1"          ;;
         *    ) get_by_title "$1" "$2" ;;
     esac
 fi
