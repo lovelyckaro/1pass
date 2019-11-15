@@ -362,16 +362,12 @@ get_info() {
     echo "item is:"
     jq <<< $item
   fi
-  local title
-  local username
-  local createddate 
-  local updateddate
-  local url
-  title=${1}
-  username=$(jq -r ".overview.ainfo" <<< "$item")
-  createddate=$(jq -r ".createdAt" <<< "$item")
-  updateddate=$(jq -r ".updatedAt" <<< "$item")
-  url=$(jq -r ".overview.url" <<< "$item")
+  local title=${1}
+  local username=$(jq -r ".overview.ainfo" <<< "$item")
+  local createddate=$(jq -r ".createdAt" <<< "$item" | sed -e 's/T/\ /g' -e 's/Z/\ UTC/g')
+  local updateddate=$(jq -r ".updatedAt" <<< "$item" | sed -e 's/T/\ /g' -e 's/Z/\ UTC/g')
+  local url=$(jq -r ".overview.url" <<< "$item")
+
   echo -e "\e[34mTitle: \e[32m$title"
   echo -e "\e[34mUsername: \e[32m$username"
   echo -e "\e[34mURL: \e[32m$url"
